@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">oyoon.gov.ae</domain>
+        <trust-anchors>
+            <certificates src="@raw/single_file_for_all_certs" />
+        </trust-anchors>
+    </domain-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="@raw/single_file_for_all_certs" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

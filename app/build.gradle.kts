@@ -51,6 +51,6 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 //    implementation("com.esri.arcgisruntime:arcgis-android:100.12.0") // Use the appropriate version
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
-    implementation("com.esri:arcgis-maps-kotlin:200.2.0")
+    implementation("com.esri:arcgis-maps-kotlin:200.3.0")
 
 }

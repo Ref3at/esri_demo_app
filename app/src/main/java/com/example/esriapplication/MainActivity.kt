@@ -26,6 +26,7 @@ import com.arcgismaps.mapping.view.SelectionProperties
 import com.example.esriapplication.databinding.ActivityMainBinding
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import java.io.File
 import java.security.cert.X509Certificate
 import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.SSLContext
@@ -58,6 +59,16 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
+
+        // Initialize the SSLContext with the custom TrustManager
+        val sslContext = SSLContext.getInstance("TLS")
+        sslContext.init(null, trustAllCertificates, java.security.SecureRandom())
+
+        // verify all hostnames for the default HttpsURLConnection
+        HttpsURLConnection.setDefaultHostnameVerifier { hostname, session -> true }
+        // Set the SSLContext as the default for HttpsURLConnection
+        HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
+
 
         ArcGISEnvironment.authenticationManager.networkAuthenticationChallengeHandler =
             NetworkAuthenticationChallengeHandler { authenticationChallenge ->
@@ -101,21 +112,16 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-        // Initialize the SSLContext with the custom TrustManager
-        val sslContext = SSLContext.getInstance("TLS")
-        sslContext.init(null, trustAllCertificates, java.security.SecureRandom())
-
-        // verify all hostnames for the default HttpsURLConnection
-        HttpsURLConnection.setDefaultHostnameVerifier { hostname, session -> true }
-        // Set the SSLContext as the default for HttpsURLConnection
-        HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
 
         // Create an ArcGISTiledLayer object using the World Imagery map URL.
         val tiledLayer = ArcGISTiledLayer(uri = "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer")
+//        val tiledLayer = ArcGISTiledLayer(uri = "https://app.oyoon.gov.ae/dubpolesrimap/intsrv/rest/services/Cache/StreetsNightBlue/MapServer")
+
 
         val baseMap = Basemap(baseLayer = tiledLayer)
         val archMap = ArcGISMap(baseMap)
-         binding.mapView.map= archMap
+        binding.mapView.map= archMap
+
 
         lifecycleScope.launch {
             archMap.loadStatus.collect {
@@ -125,62 +131,11 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+
         binding.mapView.setViewpoint(Viewpoint(34.0270, -118.8050, 72000.0))
         lifecycle.addObserver(binding.mapView)
 
-        lifecycleScope.launch {
-            binding.mapView.onSingleTapConfirmed.collect { singleTap ->
-
-                for (graphicOverlayMap in binding.mapView.graphicsOverlays){
-                    for (graphic in graphicOverlayMap.graphics) {
-                        graphic.isSelected = false
-                    }
-                }
-
-
-                val selectionProperties = SelectionProperties()
-                selectionProperties.color = Color.red
-
-                binding.mapView.selectionProperties = selectionProperties
-
-                // set a tolerance for accuracy of returned selections from point tapped
-                val tolerance = 25.0
-
-                // Identify graphics on the graphics overlay.
-                val identifyGraphicsOverlayResult =
-                    binding.mapView.identifyGraphicsOverlay(
-                        graphicsOverlay = graphicsOverlay,
-                        screenCoordinate = singleTap.screenCoordinate,
-                        tolerance = tolerance,
-                        returnPopupsOnly = false,
-                        maximumResults = -1
-                    )
-
-                // handle the result's onSuccess and onFailure
-                identifyGraphicsOverlayResult.apply {
-                    onSuccess {
-                        val identifiedGraphics = it.graphics
-                        for (graphic in identifiedGraphics) {
-                            graphic.isSelected = true
-                            println("The Selected graph name is: ${graphic.attributes["name"]}")
-
-                            graphic.symbol = SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle, Color.green, 15f)
-
-                        }
-
-
-                        onFailure {
-                            val errorMessage = "Identify graphics overlay failed: " + it.message
-                            android.util.Log.e("localClassName", errorMessage)
-                        }
-
-
-                    }
-
-
-                }
-            }
-        }
     }
 
     private suspend fun showCertificatePicker(activityContext: Activity): String? =
